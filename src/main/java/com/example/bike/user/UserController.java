@@ -1,13 +1,8 @@
 package com.example.bike.user;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
-import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
@@ -18,43 +13,49 @@ import java.util.Optional;
 public class UserController {
 
     private final UserRepository userRepository;
-    private EntityManager em;
-    private EntityTransaction tx = em.getTransaction();
 
     @GetMapping("/list")
     public List<UserEntity> userList() {
 
         return userRepository.findAll();
     }
-
-    @GetMapping("/{id}")
-    public Optional<UserEntity> user(@PathVariable(name = "id") int id) {
-        Optional<UserEntity> user = userRepository.findById(id);
+    // {seq}해당 유저 조회
+    @GetMapping("/{seq}")
+    public Optional<UserEntity> user(@PathVariable(name = "seq") Integer seq) {
+        Optional<UserEntity> user = userRepository.findById(seq);
         return user;
     }
+    // 유저 생성
     @PostMapping("")
     public String insertUser(@RequestBody UserEntity user) {
         userRepository.save(user);
         return "유저 생성 완료";
     }
-
-    @DeleteMapping("/{id}")
-    @Transactional
-    public String deleteUser(@PathVariable(name = "id") int id) {
-        userRepository.deleteById(id);
+    // 유저 삭제
+    @DeleteMapping("/{seq}")
+    public String deleteUser(@PathVariable(name = "seq") Integer seq) {
+        userRepository.deleteById(seq);
         return "유저 삭제 완료";
     }
 
+    // 유저 수정
     @PutMapping("")
-    public String updateUser(@RequestBody UserEntity userEntity) {
-        tx.begin();
-        UserEntity user = em.find(UserEntity.class, userEntity.getId());
-        user.setPw(userEntity.getPw());
-        user.setAddr(userEntity.getAddr());
-        user.setPhone(userEntity.getPhone());
-        tx.commit();
-        em.close();
-        return "수정 완료";
+    public String updateUser(@RequestBody UserEntity u) {
+        if(u.getSeq() != null) {
+            Optional<UserEntity> oUser = userRepository.findById(u.getSeq());
+            if(oUser.isEmpty()) {
+                return "존재하지 않는 아이디";
+            }
+            UserEntity user = oUser.get();
+            user.setPw(u.getPw());
+            user.setAddr(u.getAddr());
+            user.setPhone(u.getPhone());
+            userRepository.save(user);
+            return "수정 완료";
+        } else {
+            return "수정 실패";
+        }
+
     }
 
 }
